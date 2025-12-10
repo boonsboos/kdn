@@ -18,9 +18,14 @@ fun Route.postRoutes(pictureService: PictureService) {
         val multipartData: MultiPartData = call.receiveMultipart(formFieldLimit = 1024 * 1024 * 32)
 
         // only accept one file at a time.
-        val data = multipartData.readPart() ?: return@post call.respond(HttpStatusCode.InternalServerError)
+        val data = multipartData.readPart()
+        if (data == null) {
+            call.application.environment.log.error("Parsing error with multipart data? {}", call.request)
+            call.respond(HttpStatusCode.InternalServerError)
+        }
 
         if (data !is PartData.FileItem) {
+            call.application.environment.log.error("Not a file! {}", data)
             return@post call.respond(HttpStatusCode.BadRequest)
         }
 
@@ -34,7 +39,7 @@ fun Route.postRoutes(pictureService: PictureService) {
             call.response.header("Location", result.toString())
             call.respond(HttpStatusCode.OK)
         } catch (exception: Exception) {
-            call.application.environment.log.error("Failed to save image", exception)
+            call.application.environment.log.error("Failed to save image: ${exception.message}", exception)
             call.respond(HttpStatusCode.InternalServerError)
         }
     }
