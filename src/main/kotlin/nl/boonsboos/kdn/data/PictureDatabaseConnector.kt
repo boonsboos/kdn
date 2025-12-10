@@ -43,7 +43,7 @@ class PictureDatabaseConnector {
                 setBlob(2, imageData)
             }
             try {
-                statement.executeQuery()
+                statement.execute()
             } catch (e: SQLIntegrityConstraintViolationException) {
                 // handle image deduplication
                 return this.getImageIdFromBlob(imageData)
