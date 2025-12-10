@@ -1,5 +1,7 @@
 package nl.boonsboos.kdn.data;
 
+import org.slf4j.LoggerFactory
+import org.sqlite.SQLiteException
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.sql.DriverManager
@@ -8,7 +10,9 @@ import java.util.UUID
 
 class PictureDatabaseConnector {
 
-    val connstring = "jdbc:sqlite:pictures.db"
+    private val connstring = "jdbc:sqlite:pictures.db"
+
+    private val logger = LoggerFactory.getLogger(PictureDatabaseConnector::class.java)
 
     val dbInitSql = """
         CREATE TABLE IF NOT EXISTS pictures (
@@ -44,7 +48,8 @@ class PictureDatabaseConnector {
             }
             try {
                 statement.execute()
-            } catch (e: SQLIntegrityConstraintViolationException) {
+            } catch (e: SQLiteException) {
+                logger.error("Error while uploading image: ${e.message}", e)
                 // handle image deduplication
                 return this.getImageIdFromBlob(imageData)
             }
