@@ -40,18 +40,20 @@ class PictureDatabaseConnector {
     fun saveImage(imageData: ByteArrayInputStream): UUID {
         val uuid = UUID.randomUUID()
 
+        val bytes = imageData.readBytes()
+
         val conn = DriverManager.getConnection(connstring)
         conn.use { connHandle ->
             val statement = connHandle.prepareStatement(saveImageSql).apply {
                 setString(1, uuid.toString())
-                setBlob(2, imageData)
+                setBytes(2, bytes)
             }
             try {
                 statement.execute()
             } catch (e: SQLiteException) {
                 logger.error("Error while uploading image: ${e.message}", e)
                 // handle image deduplication
-                return this.getImageIdFromBlob(imageData)
+                return this.getImageIdFromBlob(bytes)
             }
 
         }
@@ -84,11 +86,11 @@ class PictureDatabaseConnector {
         WHERE image_data = ?;
     """.trimIndent()
 
-    fun getImageIdFromBlob(data: ByteArrayInputStream): UUID {
+    fun getImageIdFromBlob(data: ByteArray): UUID {
         val conn = DriverManager.getConnection(connstring)
         conn.use { connHandle ->
             val statement = connHandle.prepareStatement(getIdSql).apply {
-                setBlob(1, data)
+                setBytes(1, data)
             }
 
             val resultSet = statement.executeQuery()
